@@ -1,13 +1,16 @@
 const User = require('../models/User');
 const secret = require('../config/auth.json');
 const jwt = require('jsonwebtoken');
+const bcrypt = require("bcryptjs"); //
 
 const createUser = async (req, res) => {
-    const { name, email, password} = req.body;
+    const { name, email, password} = req.body; 
+    const newPassword = await bcrypt.hash(password, 10);
+
     await User.create({
        name:name,
        email:email,
-       password:password
+       password:newPassword
     }).then(() => {
         res.json('Cadastro efetuado com sucesso!');
         console.log('Cadastro efetuado com sucesso!');
@@ -61,15 +64,19 @@ const updateUser = async (req, res) => {
         res.status(404).json("ops! Erro ao alterar usuário!");
     }
 }
+
+//fazer um if no try
 const authenticatedUser = async (req, res) => {
-    const {name, email} = req.body;
+    const {name, email, password} = req.body;
+    
     try {
         const isUserAuthenticated = await User.findOne({
             where: {
                 email:email,
-                password:password
             }
         })
+        const response = await bcrypt.compare(password, isUserAuthenticated.password);
+        //return res.json();
         const token = jwt.sign({
             name:name,
             email: email
